@@ -145,6 +145,7 @@ function renderView(view) {
     case 'transfers': t.innerText='Transfers'; renderTransfers(c); break;
     case 'dm': t.innerText='Messages'; break;
     case 'settings': t.innerText='Settings'; renderSettings(c); break;
+    case 'builder': t.innerText='Profile Builder'; renderBuilder(c); break;
   }
 }
 
@@ -428,7 +429,8 @@ function renderSettings(container) {
         <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Bio</label>
         <textarea id="settings-bio" placeholder="Your Bio">${escapeHTML(identity.bio || '')}</textarea>
       </div>
-      <button class="btn btn-primary" id="btn-save-profile">Save Changes</button>
+      <button class="btn btn-primary" id="btn-save-profile" style="margin-right:1rem">Save Changes</button>
+      <button class="btn btn-secondary" onclick="renderView('builder')">🎨 Open HTML Profile Builder</button>
     </div>
     
     <div class="card">
@@ -597,6 +599,72 @@ function renderRooms(container) {
       </div>
     </div>
   `;
+}
+
+// ========== HTML BUILDER ==========
+function renderBuilder(container) {
+  // Use existing custom HTML or provide a basic template
+  const defaultHtml = identity.customProfileHtml || `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; background: #050505; color: #fff; text-align: center; padding: 50px; }
+    h1 { color: #00f0ff; }
+  </style>
+</head>
+<body>
+  <h1>Hello, I'm ${escapeHTML(identity.displayName)}</h1>
+  <p>Welcome to my custom P2P profile.</p>
+</body>
+</html>`;
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:1.5rem; border:1px solid var(--primary); background:rgba(0,240,255,0.05)">
+      <h3 style="color:var(--primary); margin-bottom:0.75rem; font-size:1.2rem">✨ AI-Powered Profile Builder</h3>
+      <p style="color:var(--text-main); font-size:0.95rem; line-height:1.6">
+        Don't know how to code? No problem! Just go to any AI (like ChatGPT or Gemini), tell it to "Build a cool HTML profile page for me", and copy/paste the result below. Once you're happy with how it looks in the live preview, click Save & Publish!
+      </p>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; height: 50vh; min-height:400px; margin-bottom:1.5rem">
+      <div style="display:flex; flex-direction:column;">
+        <h4 style="margin-bottom:0.75rem; color:var(--text-dim)">HTML Editor</h4>
+        <textarea id="builder-input" style="flex:1; font-family:monospace; font-size:0.85rem; padding:1rem; white-space:pre; overflow-wrap:normal; overflow-x:scroll; background:rgba(0,0,0,0.8); border:1px solid var(--border); border-radius:var(--radius-md); resize:none;">${escapeHTML(defaultHtml)}</textarea>
+      </div>
+      <div style="display:flex; flex-direction:column;">
+        <h4 style="margin-bottom:0.75rem; color:var(--text-dim)">Live Preview</h4>
+        <div style="flex:1; background:#fff; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border)">
+          <iframe id="builder-preview" style="width:100%; height:100%; border:none;" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; gap:1rem;">
+      <button class="btn btn-primary" id="btn-publish-profile">🚀 Save & Publish Profile</button>
+      <button class="btn btn-secondary" onclick="renderView('settings')">Back to Settings</button>
+    </div>
+  `;
+
+  const input = document.getElementById('builder-input');
+  const preview = document.getElementById('builder-preview');
+
+  const updatePreview = () => {
+    preview.srcdoc = input.value;
+  };
+
+  input.addEventListener('input', updatePreview);
+  updatePreview(); // initial render
+
+  document.getElementById('btn-publish-profile').onclick = async () => {
+    const html = input.value;
+    identity.customProfileHtml = html;
+    
+    // We can also automatically publish this as a P2P site using webhosting
+    const { publishPage } = await import('./lib/webhosting.js');
+    const site = await publishPage(identity, 'profile', html);
+    identity.profileSiteHash = site.manifestHash; // Save the magnet link to identity
+    
+    saveIdentity(identity);
+    alert('Profile published to the swarm! Magnet link saved to identity.\\n\\nOther peers will be able to load this custom HTML when they visit your profile.');
+  };
 }
 
 init();
