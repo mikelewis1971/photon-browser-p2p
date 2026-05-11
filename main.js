@@ -144,6 +144,7 @@ function renderView(view) {
     case 'files': t.innerText='Files'; renderFiles(c); break;
     case 'transfers': t.innerText='Transfers'; renderTransfers(c); break;
     case 'dm': t.innerText='Messages'; break;
+    case 'settings': t.innerText='Settings'; renderSettings(c); break;
   }
 }
 
@@ -400,25 +401,75 @@ function renderProfile(container) {
           <div class="profile-stat-label">Followers</div>
         </div>
       </div>
-      <div style="margin-top:1rem;display:flex;gap:0.5rem">
-        <button class="btn btn-ghost btn-sm" id="btn-edit-bio">Edit Bio</button>
-        <button class="btn btn-ghost btn-sm" id="btn-export-id">Export Identity</button>
-      </div>
     </div>
     <h3 style="margin-bottom:1rem">Your Posts</h3>
     ${myPosts.map(m => renderPostCard(m)).join('') || '<p style="color:var(--text-dim)">No posts yet.</p>'}
   `;
 
-  document.getElementById('btn-edit-bio').onclick = () => {
-    const bio = prompt('Enter your bio:', identity.bio || '');
-    if (bio !== null) { identity.bio = bio; saveIdentity(identity); renderProfile(container); }
+  bindPostActions();
+}
+
+// ========== SETTINGS ==========
+function renderSettings(container) {
+  container.innerHTML = `
+    <div class="card">
+      <h3 style="margin-bottom:1.5rem">Identity & Profile</h3>
+      <div style="display:flex;gap:1rem;margin-bottom:0.5rem">
+        <div style="flex:1">
+          <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Display Name</label>
+          <input type="text" id="settings-name" value="${escapeHTML(identity.displayName)}" placeholder="Display Name">
+        </div>
+        <div style="flex:1">
+          <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">User Handle</label>
+          <input type="text" id="settings-handle" value="${escapeHTML(identity.userHandle)}" placeholder="User Handle">
+        </div>
+      </div>
+      <div>
+        <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Bio</label>
+        <textarea id="settings-bio" placeholder="Your Bio">${escapeHTML(identity.bio || '')}</textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-save-profile">Save Changes</button>
+    </div>
+    
+    <div class="card">
+      <h3 style="margin-bottom:1.5rem">Security & Backup</h3>
+      <div style="margin-bottom:1.5rem">
+        <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Your Public Fingerprint</label>
+        <div style="background:rgba(0,0,0,0.5);padding:1rem;border-radius:var(--radius-md);font-family:monospace;font-size:0.9rem;word-break:break-all;border:1px solid var(--border)">
+          ${identity.fingerprint}
+        </div>
+      </div>
+      <button class="btn btn-secondary" id="btn-export-identity">Export Identity Backup</button>
+    </div>
+
+    <div class="card" style="border-color:var(--danger)">
+      <h3 style="margin-bottom:1rem;color:var(--danger)">Danger Zone</h3>
+      <p style="color:var(--text-dim);font-size:0.95rem;margin-bottom:1.5rem">Log out of this identity. Make sure you have exported your identity backup first, or you will lose access forever!</p>
+      <button class="btn btn-danger" id="btn-logout">Logout / Clear Local Data</button>
+    </div>
+  `;
+
+  document.getElementById('btn-save-profile').onclick = () => {
+    identity.displayName = document.getElementById('settings-name').value;
+    identity.userHandle = document.getElementById('settings-handle').value;
+    identity.bio = document.getElementById('settings-bio').value;
+    saveIdentity(identity);
+    alert('Profile saved successfully!');
+    document.getElementById('user-display-name').innerText = escapeHTML(identity.displayName);
   };
-  document.getElementById('btn-export-id').onclick = () => {
+
+  document.getElementById('btn-export-identity').onclick = () => {
     const blob = new Blob([JSON.stringify({data:{p2pweb_identity: identity}})], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = 'photon-identity.json'; a.click();
   };
-  bindPostActions();
+
+  document.getElementById('btn-logout').onclick = () => {
+    if (confirm('Are you sure you want to log out? If you haven\\'t exported your identity backup, you will lose it permanently.')) {
+      localStorage.removeItem('p2pweb_identity');
+      location.reload();
+    }
+  };
 }
 
 // ========== PEERS ==========
