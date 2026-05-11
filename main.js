@@ -30,6 +30,13 @@ function timeAgo(ts) {
 async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    
+    // Listen for messages from the public profile page (via SW)
+    navigator.serviceWorker.onmessage = (event) => {
+      if (event.data.type === 'SEND_ACCESS_REQUEST') {
+        dht.requestAccess(event.data.target);
+      }
+    };
   }
   identity = await getIdentity();
   if (!identity) { showSetup(); return; }
@@ -44,6 +51,13 @@ async function init() {
     if (decoded && currentView === 'dm') renderDM(document.getElementById('view-container'), decoded.from);
   });
 
+  // Listen for Access Requests
+  dht.on('signal', (msg) => {
+    if (msg.data && msg.data.type === 'access_request') {
+      handleIncomingAccessRequest(msg.data);
+    }
+  });
+
   torrent.on('download_progress', (data) => {
     activeTransfers.set(data.manifestHash, data);
     if (currentView === 'transfers') renderTransfers(document.getElementById('view-container'));
@@ -52,7 +66,21 @@ async function init() {
   setupNav();
   renderView('feed');
   updatePeerCount();
-  setInterval(updatePeerCount, 5000);
+function handleIncomingAccessRequest(req) {
+  // Show a notification or add to a pending list
+  console.log('Incoming access request from:', req.displayName, req.handle);
+  // For now, auto-approve if we want, or add to a pending list in the Peers view
+  if (confirm(`Peer ${req.displayName} (@${req.handle}) is requesting access to your private feed. Allow?`)) {
+    if (!identity.authorizedPeers) identity.authorizedPeers = [];
+    if (!identity.authorizedPeers.includes(req.from)) {
+      identity.authorizedPeers.push(req.from);
+      saveIdentity(identity);
+      alert('Access granted!');
+    }
+  }
+}
+
+setInterval(updatePeerCount, 5000);
 }
 
 function showSetup() {
@@ -64,6 +92,7 @@ function showSetup() {
       <div class="card" style="max-width: 400px; margin: 2rem auto;">
         <h3>Create Your Identity</h3>
         <input type="text" id="setup-name" placeholder="Display Name">
+        <input type="text" id="setup-handle" placeholder="User Handle (e.g. mike123)">
         <button class="btn btn-primary" id="btn-create" style="width:100%">Generate Keypair</button>
         <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
           <p style="font-size: 0.8rem; color:var(--text-dim)">Or import existing identity</p>
@@ -75,7 +104,8 @@ function showSetup() {
   `;
   document.getElementById('btn-create').onclick = async () => {
     const name = document.getElementById('setup-name').value || 'Anonymous';
-    identity = await createNewIdentity(name);
+    const handle = document.getElementById('setup-handle').value || '';
+    identity = await createNewIdentity(name, handle);
     location.reload();
   };
   document.getElementById('setup-import').onchange = async (e) => {
@@ -353,7 +383,8 @@ function renderProfile(container) {
     <div class="profile-info">
       <div class="profile-avatar"></div>
       <h2 style="margin:0">${escapeHTML(identity.displayName)}</h2>
-      <div class="handle">@${escapeHTML(identity.fingerprint.substring(0,12))}</div>
+      <div class="handle">@${escapeHTML(identity.userHandle)}</div>
+      <div class="timestamp" style="margin-top:0.2rem; font-size:0.7rem; opacity:0.5">${identity.fingerprint}</div>
       <p style="margin-top:0.5rem;color:var(--text-dim)">${escapeHTML(identity.bio) || 'No bio yet.'}</p>
       <div class="profile-stats">
         <div class="profile-stat">
