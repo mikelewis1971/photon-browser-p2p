@@ -61,6 +61,46 @@
     </div>
   </main>
 
+  <!-- Call Overlay (fullscreen modal for voice/video calls) -->
+  <div id="call-overlay" class="call-overlay" style="display:none">
+    <div class="call-overlay-inner">
+      <div class="call-info">
+        <div class="call-avatar"></div>
+        <div id="call-peer-name" class="call-peer-name">Calling...</div>
+        <div id="call-status" class="call-status">Connecting</div>
+      </div>
+      <div class="call-video-area" id="call-video-area" style="display:none">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay playsinline muted></video>
+      </div>
+      <div class="call-controls">
+        <button class="call-btn call-btn-mute" id="btn-mute" title="Mute">🎤</button>
+        <button class="call-btn call-btn-camera" id="btn-camera" title="Camera" style="display:none">📷</button>
+        <button class="call-btn call-btn-hangup" id="btn-hangup" title="Hang Up">📞</button>
+      </div>
+    </div>
+    <!-- Incoming Call Ring -->
+    <div id="incoming-call-ring" class="incoming-call-ring" style="display:none">
+      <div class="call-avatar" style="width:100px;height:100px"></div>
+      <div id="incoming-caller" class="call-peer-name" style="margin-top:1rem">Incoming Call</div>
+      <div class="call-status">Ringing...</div>
+      <div style="display:flex;gap:2rem;margin-top:2rem">
+        <button class="call-btn call-btn-accept" id="btn-accept">✅</button>
+        <button class="call-btn call-btn-hangup" id="btn-reject">❌</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-item active" data-view="feed"><span>🏠</span></div>
+    <div class="mobile-nav-item" data-view="explore"><span>🔍</span></div>
+    <div class="mobile-nav-item" data-view="videos"><span>🎬</span></div>
+    <div class="mobile-nav-item" data-view="rooms"><span>💬</span></div>
+    <div class="mobile-nav-item" data-view="profile"><span>👤</span></div>
+    <div class="mobile-nav-item" data-view="settings"><span>⚙️</span></div>
+  </nav>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>

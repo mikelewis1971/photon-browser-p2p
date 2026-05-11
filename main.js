@@ -8,6 +8,7 @@ import { signalRelay } from './lib/signal-relay.js';
 import { reputation } from './lib/reputation.js';
 import { handleIncomingDM, sendDM, getDMHistory } from './lib/dm-manager.js';
 import { storageIDB } from './lib/storage-idb.js';
+import { callManager } from './lib/call-manager.js';
 
 let identity = null;
 let currentView = 'feed';
@@ -35,6 +36,9 @@ async function init() {
     navigator.serviceWorker.onmessage = (event) => {
       if (event.data.type === 'SEND_ACCESS_REQUEST') {
         dht.requestAccess(event.data.target);
+      }
+      if (event.data.type === 'START_CALL') {
+        callManager.startCall(event.data.target, event.data.video);
       }
     };
   }
@@ -64,6 +68,8 @@ async function init() {
   });
 
   setupNav();
+  setupMobileNav();
+  setupCallOverlay();
   renderView('feed');
   updatePeerCount();
 function handleIncomingAccessRequest(req) {
@@ -123,6 +129,92 @@ function setupNav() {
       renderView(item.dataset.view);
     };
   });
+}
+
+function setupMobileNav() {
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    item.onclick = () => {
+      document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      renderView(item.dataset.view);
+    };
+  });
+}
+
+function setupCallOverlay() {
+  // Listen for call signals from the DHT
+  dht.on('signal', (msg) => {
+    if (msg.data && (msg.data.type === 'call_offer' || msg.data.type === 'call_answer' || msg.data.type === 'call_candidate' || msg.data.type === 'call_hangup')) {
+      callManager.handleIncomingSignal(msg);
+    }
+  });
+
+  // React to call state changes
+  callManager.onStateChange = (cm) => {
+    const overlay = document.getElementById('call-overlay');
+    const inner = document.querySelector('.call-overlay-inner');
+    const incoming = document.getElementById('incoming-call-ring');
+
+    if (cm.callState === 'idle') {
+      overlay.style.display = 'none';
+      return;
+    }
+
+    overlay.style.display = 'flex';
+
+    if (cm.callState === 'incoming') {
+      inner.style.display = 'none';
+      incoming.style.display = 'flex';
+      document.getElementById('incoming-caller').innerText = cm._incomingDisplayName + (cm.isVideo ? ' (Video Call)' : ' (Voice Call)');
+
+      document.getElementById('btn-accept').onclick = () => cm.acceptCall();
+      document.getElementById('btn-reject').onclick = () => cm.rejectCall();
+      return;
+    }
+
+    inner.style.display = 'flex';
+    incoming.style.display = 'none';
+
+    const peerName = document.getElementById('call-peer-name');
+    const statusEl = document.getElementById('call-status');
+
+    // Find the peer display name
+    const peer = dht.getPeers().find(p => p.fingerprint === cm.currentCallPeer);
+    peerName.innerText = peer?.displayName || cm.currentCallPeer?.substring(0,12) || 'Unknown';
+    statusEl.innerText = cm.callState === 'ringing' ? 'Ringing...' : (cm.isVideo ? 'Video Call' : 'Voice Call');
+
+    // Video feeds
+    const videoArea = document.getElementById('call-video-area');
+    const cameraBtn = document.getElementById('btn-camera');
+    if (cm.isVideo) {
+      videoArea.style.display = 'block';
+      cameraBtn.style.display = 'flex';
+      document.getElementById('remote-video').srcObject = cm.remoteStream;
+      if (cm.localStream) {
+        document.getElementById('local-video').srcObject = cm.localStream;
+      }
+    } else {
+      videoArea.style.display = 'none';
+      cameraBtn.style.display = 'none';
+      // Still need audio for voice
+      const rv = document.getElementById('remote-video');
+      rv.srcObject = cm.remoteStream;
+    }
+
+    // Controls
+    let isMuted = false;
+    let isCameraOff = false;
+    document.getElementById('btn-mute').onclick = () => {
+      isMuted = !cm.toggleMute();
+      document.getElementById('btn-mute').classList.toggle('muted', isMuted);
+      document.getElementById('btn-mute').innerText = isMuted ? '🔇' : '🎤';
+    };
+    document.getElementById('btn-camera').onclick = () => {
+      isCameraOff = !cm.toggleCamera();
+      document.getElementById('btn-camera').classList.toggle('off', isCameraOff);
+    };
+    document.getElementById('btn-hangup').onclick = () => cm.hangup();
+  };
 }
 
 function updatePeerCount() {
@@ -500,6 +592,8 @@ function renderPeers(container) {
               <a href="/photon-profile/${escapeHTML(p.fingerprint)}/${escapeHTML(handle)}" target="_blank" class="btn btn-sm btn-ghost">Profile</a>
               <button class="btn btn-sm ${isFollowing?'btn-ghost':'btn-primary'}" data-follow="${escapeHTML(p.fingerprint)}">${isFollowing?'Following':'Follow'}</button>
               <button class="btn btn-secondary btn-sm" onclick="window.startDM('${escapeHTML(p.fingerprint)}')">DM</button>
+              <button class="btn btn-sm btn-ghost" onclick="window.startCall('${escapeHTML(p.fingerprint)}', false)" title="Voice Call">📞</button>
+              <button class="btn btn-sm btn-ghost" onclick="window.startCall('${escapeHTML(p.fingerprint)}', true)" title="Video Call">📹</button>
             </div>
           </div>`;
         }).join('') || '<p style="color:var(--text-dim)">Searching for peers...</p>'}
@@ -513,6 +607,10 @@ window.startDM = (peerId) => {
   document.getElementById('view-title').innerText = 'DM with @' + peerId.substring(0,8);
   currentView = 'dm';
   renderDM(document.getElementById('view-container'), peerId);
+};
+
+window.startCall = (peerId, video = false) => {
+  callManager.startCall(peerId, video);
 };
 
 function renderDM(container, peerId) {
@@ -530,6 +628,8 @@ function renderDM(container, peerId) {
       <div style="display:flex;gap:0.5rem;">
         <input type="text" id="dm-input" placeholder="Encrypted message..." style="margin:0">
         <button class="btn btn-primary" id="btn-send-dm">Send</button>
+        <button class="btn btn-ghost" id="btn-dm-call" title="Voice Call">📞</button>
+        <button class="btn btn-ghost" id="btn-dm-video" title="Video Call">📹</button>
       </div>
     </div>
   `;
@@ -540,6 +640,8 @@ function renderDM(container, peerId) {
     await sendDM(identity, peer, text);
     renderDM(container, peerId);
   };
+  document.getElementById('btn-dm-call').onclick = () => window.startCall(peerId, false);
+  document.getElementById('btn-dm-video').onclick = () => window.startCall(peerId, true);
 }
 
 // ========== TRANSFERS ==========

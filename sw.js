@@ -24,7 +24,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('message', async (event) => {
-  if (event.data && event.data.type === 'SEND_ACCESS_REQUEST') {
+  if (event.data && (event.data.type === 'SEND_ACCESS_REQUEST' || event.data.type === 'START_CALL')) {
     // Relay the message to all active clients (like main.js)
     const clients = await self.clients.matchAll();
     clients.forEach(client => {
@@ -60,6 +60,10 @@ async function handleProfileRequest(request) {
           <div class="handle">Photon P2P Client</div>
           <p>This is a public Photon profile. To see my feed, DMs, and private files, please request access.</p>
           <button class="btn" id="btn-request">Request Access</button>
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;justify-content:center">
+            <button class="btn" style="background:#10b981" id="btn-call-voice">📞 Voice Call</button>
+            <button class="btn" style="background:#a855f7" id="btn-call-video">📹 Video Call</button>
+          </div>
           
           <div class="script-box">
             <h3>JS Script Runner</h3>
@@ -69,12 +73,27 @@ async function handleProfileRequest(request) {
         </div>
         <script>
           document.getElementById('btn-request').onclick = () => {
-            // Post message to parent/service worker to handle the DHT broadcast
             navigator.serviceWorker.controller.postMessage({
               type: 'SEND_ACCESS_REQUEST',
               target: '${fingerprint}'
             });
             alert('Access request sent to ${handle}!');
+          };
+          document.getElementById('btn-call-voice').onclick = () => {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'START_CALL',
+              target: '${fingerprint}',
+              video: false
+            });
+            alert('Voice call initiated to ${handle}!');
+          };
+          document.getElementById('btn-call-video').onclick = () => {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'START_CALL',
+              target: '${fingerprint}',
+              video: true
+            });
+            alert('Video call initiated to ${handle}!');
           };
         </script>
       </body>
