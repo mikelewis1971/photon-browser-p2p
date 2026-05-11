@@ -99,20 +99,25 @@ setInterval(updatePeerCount, 5000);
 }
 
 function showSetup() {
-  const main = document.querySelector('main');
-  main.innerHTML = `
-    <div class="view-content" style="text-align:center; padding-top: 10vh;">
-      <h1>⚡ Welcome to Photon</h1>
-      <p style="color:var(--text-dim)">The decentralized social network. No servers. No censorship. You own your data.</p>
-      <div class="card" style="max-width: 400px; margin: 2rem auto;">
-        <h3>Create Your Identity</h3>
-        <input type="text" id="setup-name" placeholder="Display Name">
-        <input type="text" id="setup-handle" placeholder="User Handle (e.g. mike123)">
-        <button class="btn btn-primary" id="btn-create" style="width:100%">Generate Keypair</button>
-        <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
-          <p style="font-size: 0.8rem; color:var(--text-dim)">Or import existing identity</p>
+  document.getElementById('app-layout').style.display = 'none';
+  document.getElementById('setup-layout').style.display = 'flex';
+  
+  const container = document.getElementById('setup-container');
+  container.innerHTML = `
+    <div style="text-align:center;">
+      <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(to right, var(--primary), var(--accent-purple)); -webkit-background-clip: text; color: transparent;">⚡ Welcome to Photon</h1>
+      <p style="color:var(--text-dim); margin-bottom: 2rem;">The decentralized social network. No servers. No censorship. You own your data.</p>
+      <div class="card" style="text-align: left;">
+        <h3 style="margin-bottom: 1.5rem; text-align: center;">Create Your Identity</h3>
+        <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Display Name</label>
+        <input type="text" id="setup-name" placeholder="E.g. Satoshi Nakamoto" style="margin-bottom: 1rem;">
+        <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">User Handle</label>
+        <input type="text" id="setup-handle" placeholder="E.g. satoshi" style="margin-bottom: 1.5rem;">
+        <button class="btn btn-primary" id="btn-create" style="width:100%; font-size: 1.1rem; padding: 0.75rem;">Generate Cryptographic Vault</button>
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem; text-align: center;">
+          <p style="font-size: 0.85rem; color:var(--text-dim); margin-bottom: 1rem;">Already have an identity from another device?</p>
           <input type="file" id="setup-import" style="display:none">
-          <button class="btn btn-ghost" style="width:100%" onclick="document.getElementById('setup-import').click()">Import Identity</button>
+          <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('setup-import').click()">Import Identity Backup (.json)</button>
         </div>
       </div>
     </div>

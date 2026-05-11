@@ -16,7 +16,12 @@
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
 </head>
 <body>
-  <aside>
+  <div id="setup-layout" style="display: none; width: 100%; height: 100%; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="setup-container" style="width: 100%; max-width: 500px; padding: 2rem;"></div>
+  </div>
+
+  <div id="app-layout" style="display: flex; width: 100%; height: 100%;">
+    <aside>
     <div class="logo">⚡ Photon</div>
     <nav>
       <div class="nav-item active" data-view="feed">
@@ -105,6 +110,7 @@
     <div class="mobile-nav-item" data-view="profile"><span>👤</span></div>
     <div class="mobile-nav-item" data-view="settings"><span>⚙️</span></div>
   </nav>
+  </div>
 
   <script type="module" src="main.js"></script>
 </body>
