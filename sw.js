@@ -23,6 +23,16 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+self.addEventListener('message', async (event) => {
+  if (event.data && event.data.type === 'SEND_ACCESS_REQUEST') {
+    // Relay the message to all active clients (like main.js)
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage(event.data);
+    });
+  }
+});
+
 async function handleProfileRequest(request) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);

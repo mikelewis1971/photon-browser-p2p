@@ -429,16 +429,22 @@ function renderPeers(container) {
       <div id="peers-list">
         ${peers.map(p => {
           const isFollowing = (identity.following||[]).includes(p.fingerprint);
+          const isAuthorized = (identity.authorizedPeers||[]).includes(p.fingerprint);
+          const handle = p.userHandle || p.fingerprint.substring(0,12);
           return `
           <div class="peer-item" style="justify-content:space-between">
             <div style="display:flex;align-items:center;gap:1rem">
               <div class="status-dot"></div>
               <div>
                 <div class="username">${escapeHTML(p.displayName)}</div>
-                <div class="handle">@${escapeHTML(p.fingerprint.substring(0,12))}</div>
+                <div class="handle">
+                  @${escapeHTML(handle)}
+                  ${isAuthorized ? '<span style="margin-left:0.5rem;color:var(--success);font-weight:600">✓ Authorized</span>' : ''}
+                </div>
               </div>
             </div>
             <div style="display:flex;gap:0.5rem">
+              <a href="/photon-profile/${escapeHTML(p.fingerprint)}/${escapeHTML(handle)}" target="_blank" class="btn btn-sm btn-ghost">Profile</a>
               <button class="btn btn-sm ${isFollowing?'btn-ghost':'btn-primary'}" data-follow="${escapeHTML(p.fingerprint)}">${isFollowing?'Following':'Follow'}</button>
               <button class="btn btn-secondary btn-sm" onclick="window.startDM('${escapeHTML(p.fingerprint)}')">DM</button>
             </div>
