@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photon — Decentralized P2P Browser</title>
-  <meta name="description" content="Decentralized P2P browser — BitTorrent + DHT + WebRTC" />
+  <title>Photon — Decentralized P2P Social Network</title>
+  <meta name="description" content="Decentralized P2P social platform — Twitter + Facebook + TikTok, fully peer-to-peer." />
   <link rel="stylesheet" href="index.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,19 +15,28 @@
     <div class="logo">⚡ Photon</div>
     <nav>
       <div class="nav-item active" data-view="feed">
-        <span>📱</span> Feed
+        <span>🏠</span> Home
+      </div>
+      <div class="nav-item" data-view="explore">
+        <span>🔍</span> Explore
+      </div>
+      <div class="nav-item" data-view="videos">
+        <span>🎬</span> Videos
       </div>
       <div class="nav-item" data-view="rooms">
         <span>💬</span> Rooms
+      </div>
+      <div class="nav-item" data-view="profile">
+        <span>👤</span> Profile
+      </div>
+      <div class="nav-item" data-view="peers">
+        <span>🌐</span> Network
       </div>
       <div class="nav-item" data-view="files">
         <span>📦</span> Files
       </div>
       <div class="nav-item" data-view="transfers">
         <span>📥</span> Transfers
-      </div>
-      <div class="nav-item" data-view="peers">
-        <span>🌐</span> Peers
       </div>
     </nav>
     <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
@@ -37,7 +46,7 @@
 
   <main>
     <header>
-      <h2 id="view-title">Global Feed</h2>
+      <h2 id="view-title">Home</h2>
       <div id="user-pill" style="display:flex; align-items:center; gap:0.5rem; background:var(--bg-darker); padding:0.4rem 0.8rem; border-radius:9999px; border:1px solid var(--border);">
         <div class="avatar" style="width:20px; height:20px;"></div>
         <span id="user-display-name" style="font-size:0.85rem; font-weight:600;">...</span>
