@@ -12,6 +12,16 @@ let identity = null;
 let currentView = 'feed';
 const activeTransfers = new Map();
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(() => console.log('SW Registered'));
@@ -154,11 +164,11 @@ async function renderFeed(container) {
         <div class="post-header">
           <div class="avatar"></div>
           <div>
-            <div class="username">${m.displayName}</div>
+            <div class="username">${escapeHTML(m.displayName)}</div>
             <div class="timestamp">${new Date(m.timestamp).toLocaleString()}</div>
           </div>
         </div>
-        <div class="post-body">${m.text}</div>
+        <div class="post-body">${escapeHTML(m.text)}</div>
       </div>
     `).join('');
   };
@@ -212,14 +222,14 @@ function renderPeers(container) {
             <div style="display:flex; align-items:center; gap:1rem">
               <div class="status-dot"></div>
               <div>
-                <div class="username">${p.displayName}</div>
-                <div class="timestamp" style="font-size:0.7rem">${p.fingerprint}</div>
+                <div class="username">${escapeHTML(p.displayName)}</div>
+                <div class="timestamp" style="font-size:0.7rem">${escapeHTML(p.fingerprint)}</div>
                 <div class="badge" style="font-size:0.6rem; background:rgba(14,165,233,0.1); padding:2px 6px; border-radius:4px; color:var(--primary)">
                   ${reputation.getTier(p.fingerprint)}
                 </div>
               </div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="window.startDM('${p.fingerprint}')">Message</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.startDM('${escapeHTML(p.fingerprint)}')">Message</button>
           </div>
         `).join('') || '<p>Searching for peers...</p>'}
       </div>
@@ -242,7 +252,7 @@ function renderDM(container, peerId) {
         ${history.map(m => `
           <div style="align-self: ${m.outgoing ? 'flex-end' : 'flex-start'}; background: ${m.outgoing ? 'var(--primary-glow)' : 'var(--bg-darker)'}; padding: 0.5rem 1rem; border-radius: 1rem; max-width: 80%;">
             <div style="font-size:0.7rem; opacity:0.6">${m.outgoing ? 'You' : 'Peer'}</div>
-            <div>${m.text}</div>
+            <div>${escapeHTML(m.text)}</div>
           </div>
         `).join('')}
       </div>
@@ -269,7 +279,7 @@ function renderTransfers(container) {
       ${transfers.map(t => `
         <div style="margin-bottom:1.5rem">
           <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-            <span>${t.name || 'Unknown File'}</span>
+            <span>${escapeHTML(t.name) || 'Unknown File'}</span>
             <span>${t.percent}%</span>
           </div>
           <div style="height:8px; background:var(--bg-darker); border-radius:4px; overflow:hidden">

@@ -43,7 +43,10 @@ async function handleP2PRequest(request) {
   
   const fullContent = new Blob(chunks, { type: manifest.type || 'text/html' });
   return new Response(fullContent, {
-    headers: { 'Content-Type': manifest.type || 'text/html' }
+    headers: { 
+      'Content-Type': manifest.type || 'text/html',
+      'Content-Security-Policy': "sandbox allow-scripts"
+    }
   });
 }
 
