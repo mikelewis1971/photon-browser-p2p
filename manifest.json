@@ -1,0 +1,24 @@
+{
+  "name": "Photon — P2P Social Network",
+  "short_name": "Photon",
+  "description": "Decentralized P2P social platform — Twitter + Facebook + TikTok, fully peer-to-peer. No servers. No censorship.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#00f0ff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -9,6 +9,14 @@ import { reputation } from './lib/reputation.js';
 import { handleIncomingDM, sendDM, getDMHistory } from './lib/dm-manager.js';
 import { storageIDB } from './lib/storage-idb.js';
 import { callManager } from './lib/call-manager.js';
+import { deviceManager } from './lib/device-manager.js';
+
+// ---- PWA Install Prompt Logic ----
+window._deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window._deferredInstallPrompt = e;
+});
 
 let identity = null;
 let currentView = 'feed';
@@ -46,6 +54,7 @@ async function init() {
   if (!identity) { showSetup(); return; }
 
   document.getElementById('user-display-name').innerText = escapeHTML(identity.displayName);
+  deviceManager.init();
   dht.init(identity);
   webrtc.init();
   signalRelay.connect(identity.fingerprint);
@@ -504,6 +513,11 @@ function renderProfile(container) {
 
 // ========== SETTINGS ==========
 function renderSettings(container) {
+  const callPerms = deviceManager.getCallPermissions();
+  const hostingConfig = deviceManager.getHostingConfig();
+  const device = deviceManager.getDevice();
+  const uptime = deviceManager.getUptime();
+
   container.innerHTML = `
     <div class="card">
       <h3 style="margin-bottom:1.5rem">Identity & Profile</h3>
@@ -524,7 +538,103 @@ function renderSettings(container) {
       <button class="btn btn-primary" id="btn-save-profile" style="margin-right:1rem">Save Changes</button>
       <button class="btn btn-secondary" onclick="renderView('builder')">🎨 Open HTML Profile Builder</button>
     </div>
-    
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem">📞 Call Permissions</h3>
+      <p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:1rem">Control who can call you and whether call buttons appear on your public profile page.</p>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+          <input type="checkbox" id="perm-voice" ${callPerms.allowVoice ? 'checked' : ''} style="width:auto;margin:0">
+          <span>Allow Voice Calls</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+          <input type="checkbox" id="perm-video" ${callPerms.allowVideo ? 'checked' : ''} style="width:auto;margin:0">
+          <span>Allow Video Calls</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+          <input type="checkbox" id="perm-public" ${callPerms.publicCalls ? 'checked' : ''} style="width:auto;margin:0">
+          <span>Allow Strangers to Call (from public profile page)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+          <input type="checkbox" id="perm-friends" ${callPerms.friendsOnly ? 'checked' : ''} style="width:auto;margin:0">
+          <span>Friends Only (only authorized peers can call)</span>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-save-call-perms" style="margin-top:1rem">Save Call Settings</button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem">📦 Data Hosting</h3>
+      <p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:1rem">Help the swarm by hosting other people's posts and media. You choose how much storage to donate and whose content to host.</p>
+      <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;margin-bottom:1rem">
+        <input type="checkbox" id="hosting-enabled" ${hostingConfig.enabled ? 'checked' : ''} style="width:auto;margin:0">
+        <span style="font-weight:600">Enable Data Hosting</span>
+      </label>
+      <div id="hosting-details" style="${hostingConfig.enabled ? '' : 'opacity:0.4;pointer-events:none;'}">
+        <div style="margin-bottom:1rem">
+          <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Storage Budget (MB)</label>
+          <input type="range" id="hosting-budget" min="10" max="5000" step="10" value="${hostingConfig.budgetMB}" style="width:100%;margin:0">
+          <div style="display:flex;justify-content:space-between;color:var(--text-dim);font-size:0.8rem">
+            <span>10 MB</span>
+            <span id="hosting-budget-label">${hostingConfig.budgetMB} MB</span>
+            <span>5 GB</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:0.5rem;padding:1rem;background:rgba(0,0,0,0.3);border-radius:var(--radius-md)">
+          <div>
+            <div style="font-weight:800;font-size:1.4rem;color:var(--primary)">${hostingConfig.usedMB || 0} MB</div>
+            <div style="color:var(--text-dim);font-size:0.8rem">Used of ${hostingConfig.budgetMB} MB</div>
+          </div>
+          <div style="flex:1;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(100, ((hostingConfig.usedMB || 0) / hostingConfig.budgetMB) * 100)}%;background:var(--primary);border-radius:4px"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem">
+          <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+            <input type="radio" name="host-mode" id="host-open" ${hostingConfig.hostOpenContent ? 'checked' : ''} style="width:auto;margin:0">
+            <span>Host anyone's public content (open relay)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+            <input type="radio" name="host-mode" id="host-followed" ${hostingConfig.hostFollowedOnly ? 'checked' : ''} style="width:auto;margin:0">
+            <span>Only host content from people I follow</span>
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-save-hosting" style="margin-top:1rem">Save Hosting Settings</button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem">📱 This Device</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+        <div style="padding:1rem;background:rgba(0,0,0,0.3);border-radius:var(--radius-md);text-align:center">
+          <div style="font-size:2rem;margin-bottom:0.5rem">${device.deviceName === '📱 Phone' ? '📱' : device.deviceName === '📋 Tablet' ? '📋' : '💻'}</div>
+          <div style="font-weight:700">${escapeHTML(device.customName || device.deviceName)}</div>
+          <div style="color:var(--text-dim);font-size:0.8rem;margin-top:0.25rem">${device.deviceId}</div>
+        </div>
+        <div style="padding:1rem;background:rgba(0,0,0,0.3);border-radius:var(--radius-md);text-align:center">
+          <div style="font-size:2rem;margin-bottom:0.5rem">⏱️</div>
+          <div style="font-weight:700">${deviceManager.formatUptime(uptime.totalSeconds)}</div>
+          <div style="color:var(--text-dim);font-size:0.8rem;margin-top:0.25rem">Total Uptime (${uptime.sessions} sessions)</div>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="display:block;color:var(--text-dim);font-size:0.8rem;margin-bottom:0.25rem">Custom Device Name</label>
+        <div style="display:flex;gap:0.5rem">
+          <input type="text" id="device-name-input" value="${escapeHTML(device.customName || '')}" placeholder="${escapeHTML(device.deviceName)}" style="margin:0">
+          <button class="btn btn-sm btn-primary" id="btn-save-device-name">Save</button>
+        </div>
+      </div>
+      <div style="padding:1rem;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.1);border-radius:var(--radius-md)">
+        <h4 style="color:var(--primary);margin-bottom:0.5rem">Multi-Device Sync</h4>
+        <p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:1rem">
+          To use the same Photon identity on another device (phone, tablet, or PC), export your Identity Backup below, then import it on the other device. Each device will track its own uptime and can have its own hosting budget.
+        </p>
+        <p style="color:var(--text-dim);font-size:0.85rem">
+          <strong>Tip:</strong> Phones are always on, so they're great as always-on hosting nodes. Set a bigger hosting budget on your phone and a smaller one on your PC.
+        </p>
+      </div>
+    </div>
+
     <div class="card">
       <h3 style="margin-bottom:1.5rem">Security & Backup</h3>
       <div style="margin-bottom:1.5rem">
@@ -533,7 +643,10 @@ function renderSettings(container) {
           ${identity.fingerprint}
         </div>
       </div>
-      <button class="btn btn-secondary" id="btn-export-identity">Export Identity Backup</button>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <button class="btn btn-secondary" id="btn-export-identity">Export Identity Backup</button>
+        <button class="btn btn-secondary" id="btn-install-app">📲 Install as App</button>
+      </div>
     </div>
 
     <div class="card" style="border-color:var(--danger)">
@@ -543,6 +656,7 @@ function renderSettings(container) {
     </div>
   `;
 
+  // ---- Save Profile ----
   document.getElementById('btn-save-profile').onclick = () => {
     identity.displayName = document.getElementById('settings-name').value;
     identity.userHandle = document.getElementById('settings-handle').value;
@@ -552,12 +666,65 @@ function renderSettings(container) {
     document.getElementById('user-display-name').innerText = escapeHTML(identity.displayName);
   };
 
+  // ---- Call Permissions ----
+  document.getElementById('btn-save-call-perms').onclick = () => {
+    deviceManager.setCallPermissions({
+      allowVoice: document.getElementById('perm-voice').checked,
+      allowVideo: document.getElementById('perm-video').checked,
+      publicCalls: document.getElementById('perm-public').checked,
+      friendsOnly: document.getElementById('perm-friends').checked
+    });
+    alert('Call permissions saved!');
+  };
+
+  // ---- Hosting Config ----
+  const budgetSlider = document.getElementById('hosting-budget');
+  const budgetLabel = document.getElementById('hosting-budget-label');
+  budgetSlider.oninput = () => { budgetLabel.innerText = budgetSlider.value + ' MB'; };
+
+  document.getElementById('hosting-enabled').onchange = (e) => {
+    document.getElementById('hosting-details').style.opacity = e.target.checked ? '1' : '0.4';
+    document.getElementById('hosting-details').style.pointerEvents = e.target.checked ? 'auto' : 'none';
+  };
+
+  document.getElementById('btn-save-hosting').onclick = () => {
+    const config = deviceManager.getHostingConfig();
+    config.enabled = document.getElementById('hosting-enabled').checked;
+    config.budgetMB = parseInt(budgetSlider.value);
+    config.hostOpenContent = document.getElementById('host-open').checked;
+    config.hostFollowedOnly = document.getElementById('host-followed').checked;
+    deviceManager.setHostingConfig(config);
+    alert('Hosting settings saved!');
+  };
+
+  // ---- Device Name ----
+  document.getElementById('btn-save-device-name').onclick = () => {
+    deviceManager.setDeviceName(document.getElementById('device-name-input').value);
+    alert('Device name updated!');
+  };
+
+  // ---- Export Identity ----
   document.getElementById('btn-export-identity').onclick = () => {
     const blob = new Blob([JSON.stringify({data:{p2pweb_identity: identity}})], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = 'photon-identity.json'; a.click();
   };
 
+  // ---- Install as App (PWA) ----
+  document.getElementById('btn-install-app').onclick = async () => {
+    if (window._deferredInstallPrompt) {
+      window._deferredInstallPrompt.prompt();
+      const result = await window._deferredInstallPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        alert('Photon has been installed as an app!');
+      }
+      window._deferredInstallPrompt = null;
+    } else {
+      alert('To install Photon as an app:\\n\\n• Chrome/Edge: Click the install icon in the address bar\\n• Safari iOS: Tap Share → Add to Home Screen\\n• Android: Tap the 3-dot menu → Install App');
+    }
+  };
+
+  // ---- Logout ----
   document.getElementById('btn-logout').onclick = () => {
     if (confirm('Are you sure you want to log out? If you haven\\'t exported your identity backup, you will lose it permanently.')) {
       localStorage.removeItem('p2pweb_identity');
@@ -565,6 +732,7 @@ function renderSettings(container) {
     }
   };
 }
+
 
 // ========== PEERS ==========
 function renderPeers(container) {
