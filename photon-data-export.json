@@ -1,0 +1,9 @@
+{
+  "exportedAt": "2026-05-11T19:40:49.076Z",
+  "exportedBy": "Michael Lewis",
+  "fingerprint": "234f39b5856ad4e0f27dd95a8cac8f7853bc193892672a934eb891721a0a80aa",
+  "note": "Import by pasting keys into localStorage via browser DevTools. Chunk data excluded — re-download files via magnet links.",
+  "data": {
+    "p2pweb_identity": "{\"publicKey\":{\"crv\":\"P-256\",\"ext\":true,\"key_ops\":[\"verify\"],\"kty\":\"EC\",\"x\":\"3iIkhC32XoXNyhl05Ecpfqw0y-41yjWIHOFIY_MtKMw\",\"y\":\"lFwatecJ-O1_Y3KYFeIOKkg1IjdkwULwQHcLJpGTaAA\"},\"privateKey\":{\"crv\":\"P-256\",\"d\":\"hj1YaXJkgq7OrWwcP5RajYQoqFOyLnWTA6UZdCb3wAY\",\"ext\":true,\"key_ops\":[\"sign\"],\"kty\":\"EC\",\"x\":\"3iIkhC32XoXNyhl05Ecpfqw0y-41yjWIHOFIY_MtKMw\",\"y\":\"lFwatecJ-O1_Y3KYFeIOKkg1IjdkwULwQHcLJpGTaAA\"},\"fingerprint\":\"234f39b5856ad4e0f27dd95a8cac8f7853bc193892672a934eb891721a0a80aa\",\"displayName\":\"Michael Lewis\",\"bio\":\"\",\"following\":[],\"blocked\":[],\"seq\":0,\"createdAt\":1778528444263}"
+  }
+}

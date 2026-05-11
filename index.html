@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photon — Decentralized P2P Browser</title>
+  <meta name="description" content="Decentralized P2P browser — BitTorrent + DHT + WebRTC" />
+  <link rel="stylesheet" href="index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <aside>
+    <div class="logo">⚡ Photon</div>
+    <nav>
+      <div class="nav-item active" data-view="feed">
+        <span>📱</span> Feed
+      </div>
+      <div class="nav-item" data-view="rooms">
+        <span>💬</span> Rooms
+      </div>
+      <div class="nav-item" data-view="files">
+        <span>📦</span> Files
+      </div>
+      <div class="nav-item" data-view="transfers">
+        <span>📥</span> Transfers
+      </div>
+      <div class="nav-item" data-view="peers">
+        <span>🌐</span> Peers
+      </div>
+    </nav>
+    <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+      <div id="peer-count" style="font-size: 0.75rem; color: var(--text-dim);">0 peers online</div>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <h2 id="view-title">Global Feed</h2>
+      <div id="user-pill" style="display:flex; align-items:center; gap:0.5rem; background:var(--bg-darker); padding:0.4rem 0.8rem; border-radius:9999px; border:1px solid var(--border);">
+        <div class="avatar" style="width:20px; height:20px;"></div>
+        <span id="user-display-name" style="font-size:0.85rem; font-weight:600;">...</span>
+      </div>
+    </header>
+
+    <div id="view-container" class="view-content">
+      <!-- Content loaded by main.js -->
+    </div>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
