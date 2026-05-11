@@ -12,13 +12,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // Intercept paths starting with /photon-site/
-  if (url.pathname.startsWith('/photon-site/')) {
+  // Intercept paths containing /photon-site/
+  if (url.pathname.includes('/photon-site/')) {
     event.respondWith(handleP2PRequest(event.request));
   }
   
-  // Intercept paths starting with /photon-profile/
-  if (url.pathname.startsWith('/photon-profile/')) {
+  // Intercept paths containing /photon-profile/
+  else if (url.pathname.includes('/photon-profile/')) {
     event.respondWith(handleProfileRequest(event.request));
   }
 });
@@ -36,8 +36,9 @@ self.addEventListener('message', async (event) => {
 async function handleProfileRequest(request) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
-  const fingerprint = pathParts[1]; // /photon-profile/FINGERPRINT/HANDLE
-  const handle = pathParts[2];
+  const idx = pathParts.indexOf('photon-profile');
+  const fingerprint = pathParts[idx + 1]; // /photon-profile/FINGERPRINT/HANDLE
+  const handle = pathParts[idx + 2];
   
   // Generate a public profile shell
   const html = `
@@ -106,11 +107,12 @@ async function handleProfileRequest(request) {
 async function handleP2PRequest(request) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
-  // Expected format: /photon-site/FINGERPRINT/SITE_ID
-  if (pathParts.length < 3) return new Response('Invalid Photon URL', { status: 400 });
+  const idx = pathParts.indexOf('photon-site');
   
-  const fingerprint = pathParts[1];
-  const siteId = pathParts[2];
+  if (idx === -1 || pathParts.length < idx + 3) return new Response('Invalid Photon URL', { status: 400 });
+  
+  const fingerprint = pathParts[idx + 1];
+  const siteId = pathParts[idx + 2];
   const siteUrl = `photon-site://${fingerprint}/${siteId}`;
   
   // We need to access IndexedDB from the Service Worker

@@ -757,7 +757,7 @@ function renderPeers(container) {
               </div>
             </div>
             <div style="display:flex;gap:0.5rem">
-              <a href="/photon-profile/${escapeHTML(p.fingerprint)}/${escapeHTML(handle)}" target="_blank" class="btn btn-sm btn-ghost">Profile</a>
+              <a href="photon-profile/${escapeHTML(p.fingerprint)}/${escapeHTML(handle)}" target="_blank" class="btn btn-sm btn-ghost">Profile</a>
               <button class="btn btn-sm ${isFollowing?'btn-ghost':'btn-primary'}" data-follow="${escapeHTML(p.fingerprint)}">${isFollowing?'Following':'Follow'}</button>
               <button class="btn btn-secondary btn-sm" onclick="window.startDM('${escapeHTML(p.fingerprint)}')">DM</button>
               <button class="btn btn-sm btn-ghost" onclick="window.startCall('${escapeHTML(p.fingerprint)}', false)" title="Voice Call">📞</button>
