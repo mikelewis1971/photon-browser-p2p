@@ -1,123 +1,66 @@
-# Photon Browser v1.0
+# ⚡ Photon Browser — Decentralized P2P Ecosystem
 
-A fully decentralized, autonomous, client-side P2P web browser.
+Photon is a fully autonomous, client-side P2P web browser and social ecosystem. It operates entirely without traditional servers, using a hybrid discovery network and direct WebRTC peer-to-peer tunnels to share files, messages, and websites.
 
-## What is Photon?
+## 🚀 Features
 
-Photon is a web application that runs entirely in your browser with no server required for core
-P2P functionality. It uses:
+| Feature | Implementation | Description |
+|---------|----------------|-------------|
+| **Global Feed** | `feed.js` | Cryptographically signed social posts broadcast to the swarm. |
+| **Encrypted DMs**| `dm-manager.js`| End-to-end encrypted messaging using ECDH and AES-256-GCM. |
+| **File Swarm** | `torrent.js` | BitTorrent-style piece exchange for sharing files via magnet links. |
+| **P2P Hosting** | `sw.js` | Host and browse HTML pages directly from other peers using `photon-site://`. |
+| **High Capacity**| `storage-idb.js`| Multi-gigabyte content-addressed storage using IndexedDB. |
+| **Reputation** | `reputation.js`| Autonomous peer scoring based on uptime and network contributions. |
 
-- **BroadcastChannel** — in-browser DHT simulation for same-device tabs
-- **WebRTC** — direct peer-to-peer connections across devices/networks
-- **localStorage** — content-addressed chunk store (SHA-256)
-- **BitTorrent-style piece exchange** — download files from multiple seeders
-- **ECDSA P-256** — cryptographic identity (no passwords, no email)
-- **AES-GCM** — encrypted direct messages
+## 🏗️ Architecture
 
-## Features
+### 1. Identity & Cryptography
+Photon uses **ECDSA P-256** for identity. There are no passwords or emails. Your identity is a keypair stored in your browser. Every message and file you share is signed, ensuring authenticity and non-repudiation.
 
-| Feature | Description |
-|---------|-------------|
-| **Feed** | Cryptographically signed social posts |
-| **Files** | Upload, seed, and download files via magnet links |
-| **Discover** | Browse the swarm, download by magnet link |
-| **Rooms** | Public P2P chat channels |
-| **Messages** | Encrypted peer-to-peer DMs |
-| **Pages** | Write and host HTML pages on the swarm |
-| **Scripts** | Run sandboxed JavaScript/HTML apps |
-| **Peers** | See online nodes, follow/block |
-| **Reputation** | Score peers by seeding, uptime, messages |
-| **My Page** | Your pinned content dashboard |
+### 2. Hybrid Discovery Network
+Photon uses a two-tier discovery system:
+- **Local Swarm**: Uses `BroadcastChannel` to instantly sync tabs and devices on the same local instance.
+- **Global Swarm**: Connects to a WebSocket signaling relay to discover and handshake with remote peers across the internet.
 
-## Reputation System
+### 3. P2P Routing Engine
+Once peers are discovered via the relay, Photon establishes direct **WebRTC DataChannels**.
+- **Data In**: Incoming WebRTC messages are injected directly into the DHT state machine.
+- **Data Out**: Local broadcasts are mirrored across all active WebRTC tunnels, creating a distributed mesh network.
 
-Peers earn reputation by:
-- +2 per piece served to other peers
-- +0.5 per minute online
-- +1 per valid signed message  
-- +5 per follower
-- -20 per report received
+### 4. Storage & Transport
+Files and websites are broken into **16KB chunks**, hashed with **SHA-256**, and stored in **IndexedDB**. Chunks are requested by their hash from the swarm. If one peer goes offline, the browser automatically finds another seeder for the missing pieces.
 
-Tiers: New → Active (50) → Trusted (200) → Legend (500)
+### 5. Service Worker Hosting
+The `sw.js` (Service Worker) acts as a local proxy. When you navigate to a P2P site, the worker intercepts the request, pulls the manifest from the DHT, fetches the binary chunks from the swarm, and reconstructs the page in real-time.
 
-## Moderation
+## 🛠️ Getting Started
 
-Local-first moderation. Block content, mute peers. If 3+ trusted peers report
-content, it is auto-hidden. Reports are broadcast to help the network self-moderate.
-
-## P2P Web Hosting
-
-Publish HTML pages to the swarm. Each page gets a Photon address:
-`photon-site://FINGERPRINT/PAGE_ID`
-
-Pages are stored as content-addressed chunks, seeded like files,
-and loaded directly from peers.
-
-## File Sharing
-
-1. Upload a file → automatically chunked (16 KB pieces) + SHA-256 hashed
-2. Get a magnet link: `photon://HASH?name=...&size=...&pieces=N`
-3. Share the magnet link with anyone on the network
-4. Recipients paste it in Discover → pieces download from all seeders
-5. After download, you automatically become a seeder
-
-## Magnet Link Format
-
-```
-photon://SHA256HASH?name=FILENAME&size=BYTES&type=MIME&pieces=N&mh=HASH
-```
-
-## Running Standalone
+### Installation
+Photon is a standalone web app. No complex backend is required.
 
 ```bash
-# Option 1: Any static server
-npx serve .
+# Clone the repository
+git clone https://github.com/mikelewis1971/photon-browser-p2p.git
+cd photon-browser-p2p
 
-# Option 2: Python
-python3 -m http.server 8080
+# Install dependencies (only serve for local hosting)
+npm install
 
-# Option 3: Just open index.html
-# Works for same-device multi-tab P2P (BroadcastChannel)
-# Cross-device needs a static host (GitHub Pages, Netlify, etc.)
+# Start the browser
+npm start
 ```
 
-## Architecture
+### Initial Setup
+1. Open the browser (typically `http://localhost:3000`).
+2. **Create Identity**: Enter a display name to generate your cryptographic keys.
+3. **Import Identity**: If you have a `photon-data-export.json`, you can import it to restore your account.
+4. **Join the Swarm**: The browser will automatically connect to the signaling relay and discover other online peers.
 
-```
-Browser Tab A ──BroadcastChannel──▶ Browser Tab B
-              ──WebRTC DataChannel──▶ Remote Peer
-              ──localStorage──────▶ Content Store
+## 🔐 Security & Privacy
+- **E2EE**: Direct messages use Elliptic Curve Diffie-Hellman (ECDH) for secret derivation.
+- **Standalone**: All logic runs in your browser. Your private keys never leave your machine.
+- **Local-First**: The browser remains functional even if the signaling relay is down (via local BroadcastChannel discovery).
 
-DHT (BroadcastChannel):
-  peer_announce → peer discovery
-  dht_put       → key-value replication
-  new_message   → feed/chat broadcast
-  signal        → WebRTC handshake
-
-Torrent (BroadcastChannel: photon_swarm):
-  announce      → seeder/leecher registration
-  piece_request → "I need piece N of hash H"
-  piece_response → "here is piece N of hash H" (base64)
-```
-
-## File Structure
-
-```
-lib/
-  crypto.js      — ECDSA, SHA-256, AES-GCM
-  dht.js         — in-browser DHT + pub/sub
-  torrent.js     — BitTorrent piece exchange
-  webrtc.js      — WebRTC data channels + file transfer
-  chat.js        — rooms + DMs
-  storage.js     — content-addressed localStorage
-  feed.js        — signed social messages
-  identity.js    — keypair lifecycle
-  reputation.js  — peer scoring
-  moderation.js  — content filtering
-  webhosting.js  — P2P page hosting
-  scriptRunner.js — sandboxed iframe executor
-```
-
-## License
-
-MIT — build freely, fork freely, host freely.
+## 📄 License
+MIT © 2026 Michael Lewis
