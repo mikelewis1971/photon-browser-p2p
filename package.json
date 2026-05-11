@@ -1,0 +1,25 @@
+{
+  "name": "photon-browser-p2p",
+  "version": "1.0.0",
+  "description": "A fully decentralized, autonomous, client-side P2P web browser.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "serve .",
+    "dev": "serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "p2p",
+    "webrtc",
+    "bittorrent",
+    "dht",
+    "decentralized",
+    "browser"
+  ],
+  "author": "Michael Lewis",
+  "license": "MIT",
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
