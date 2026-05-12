@@ -1,5 +1,5 @@
 // Photon Service Worker — Resolves photon-site:// requests via IndexedDB
-const CACHE_NAME = 'photon-p2p-cache';
+const CACHE_NAME = 'photon-p2p-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
