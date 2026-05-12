@@ -1,3 +1,5 @@
+console.log("--- main.js loaded ---");
+
 import { dht } from './lib/dht.js';
 import { getIdentity, createNewIdentity, importIdentityFromJson, saveIdentity } from './lib/identity.js';
 import { postToFeed, likePost, replyToPost, getLikes, getReplies } from './lib/feed.js';
@@ -10,6 +12,8 @@ import { handleIncomingDM, sendDM, getDMHistory } from './lib/dm-manager.js';
 import { storageIDB } from './lib/storage-idb.js';
 import { callManager } from './lib/call-manager.js';
 import { deviceManager } from './lib/device-manager.js';
+
+console.log("--- main.js imports finished ---");
 
 // ---- PWA Install Prompt Logic ----
 window._deferredInstallPrompt = null;
@@ -37,8 +41,11 @@ function timeAgo(ts) {
 }
 
 async function init() {
+  console.log("--- init() called ---");
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js').catch((e)=>{
+      console.warn("SW register failed:", e);
+    });
     
     // Listen for messages from the public profile page (via SW)
     navigator.serviceWorker.onmessage = (event) => {
@@ -741,7 +748,7 @@ function renderSettings(container) {
 
   // ---- Logout ----
   document.getElementById('btn-logout').onclick = () => {
-    if (confirm('Are you sure you want to log out? If you haven\\'t exported your identity backup, you will lose it permanently.')) {
+    if (confirm("Are you sure you want to log out? If you haven't exported your identity backup, you will lose it permanently.")) {
       localStorage.removeItem('p2pweb_identity');
       location.reload();
     }
