@@ -42,16 +42,28 @@ async function init() {
     
     // Listen for messages from the public profile page (via SW)
     navigator.serviceWorker.onmessage = (event) => {
-      if (event.data.type === 'SEND_ACCESS_REQUEST') {
+      if (event.data && event.data.type === 'SEND_ACCESS_REQUEST') {
         dht.requestAccess(event.data.target);
       }
-      if (event.data.type === 'START_CALL') {
+      if (event.data && event.data.type === 'START_CALL') {
         callManager.startCall(event.data.target, event.data.video);
       }
     };
   }
+
   identity = await getIdentity();
-  if (!identity) { showSetup(); return; }
+
+  if (!identity) {
+    // No identity — show login screen, hide app
+    document.getElementById('setup-layout').style.display = 'flex';
+    document.getElementById('app-layout').style.display = 'none';
+    showSetup();
+    return;
+  }
+
+  // Authenticated — hide login, show app
+  document.getElementById('setup-layout').style.display = 'none';
+  document.getElementById('app-layout').style.display = 'flex';
 
   document.getElementById('user-display-name').innerText = escapeHTML(identity.displayName);
   deviceManager.init();
@@ -81,10 +93,11 @@ async function init() {
   setupCallOverlay();
   renderView('feed');
   updatePeerCount();
+  setInterval(updatePeerCount, 5000);
+}
+
 function handleIncomingAccessRequest(req) {
-  // Show a notification or add to a pending list
   console.log('Incoming access request from:', req.displayName, req.handle);
-  // For now, auto-approve if we want, or add to a pending list in the Peers view
   if (confirm(`Peer ${req.displayName} (@${req.handle}) is requesting access to your private feed. Allow?`)) {
     if (!identity.authorizedPeers) identity.authorizedPeers = [];
     if (!identity.authorizedPeers.includes(req.from)) {
@@ -93,9 +106,6 @@ function handleIncomingAccessRequest(req) {
       alert('Access granted!');
     }
   }
-}
-
-setInterval(updatePeerCount, 5000);
 }
 
 function showSetup() {
@@ -941,5 +951,8 @@ function renderBuilder(container) {
     alert('Profile published to the swarm! Magnet link saved to identity.\\n\\nOther peers will be able to load this custom HTML when they visit your profile.');
   };
 }
+
+// Expose to window for inline onclick handlers in ES module context
+window.renderView = renderView;
 
 init();
