@@ -26,10 +26,18 @@
   <!-- URL-based reset handler (runs before module scripts) -->
   <script>
     if (location.search.includes('reset')) {
-      localStorage.clear();
-      if ('caches' in window) caches.keys().then(k => k.forEach(n => caches.delete(n)));
-      if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-      location.href = location.pathname;
+      (async function() {
+        localStorage.clear();
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if (navigator.serviceWorker) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        location.href = location.pathname;
+      })();
     }
   </script>
 
