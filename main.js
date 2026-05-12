@@ -955,4 +955,17 @@ function renderBuilder(container) {
 // Expose to window for inline onclick handlers in ES module context
 window.renderView = renderView;
 
-init();
+init().catch(err => {
+  console.error('Photon init failed:', err);
+  const container = document.getElementById('setup-container');
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:2rem;">
+        <h2 style="color:var(--danger, #ef4444);">⚠️ Photon Failed to Start</h2>
+        <p style="color:var(--text-dim, #9ca3af);">${err.message || err}</p>
+        <pre style="text-align:left;background:rgba(0,0,0,0.5);padding:1rem;border-radius:0.5rem;font-size:0.8rem;overflow:auto;max-height:200px;color:#f87171;">${err.stack || ''}</pre>
+        <button onclick="location.href=location.pathname+'?reset'" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#0ea5e9;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-weight:600;">Reset & Try Again</button>
+      </div>
+    `;
+  }
+});
